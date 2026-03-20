@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.hal.HAL;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -39,6 +40,8 @@ public class Robot extends TimedRobot {
 
     // Used to track usage of Kitbot code, please do not remove.
     HAL.report(tResourceType.kResourceType_Framework, 10);
+
+    CameraServer.startAutomaticCapture();
   }
 
   /**
