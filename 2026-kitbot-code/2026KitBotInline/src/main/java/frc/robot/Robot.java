@@ -43,7 +43,7 @@ public class Robot extends TimedRobot {
     HAL.report(tResourceType.kResourceType_Framework, 10);
 
     CameraServer.startAutomaticCapture();
-    SmartDashboard.putNumber("Drive Speed Multiplier", 1);
+    SmartDashboard.putNumber("Drive Speed Multiplier", SmartDashboard.getNumber("Drive Speed Multiplier", 1));
   }
 
   /**
