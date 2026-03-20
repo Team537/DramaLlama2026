@@ -35,6 +35,36 @@ public class CANFuelSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE);
     SmartDashboard.putNumber("Spin-up feeder roller value", SPIN_UP_FEEDER_VOLTAGE);
 
+    // Export current Shuffleboard defaults to a JSON file on the roboRIO so the
+    // values can be copied back and persisted into Constants.java if you
+    // choose option 1b. This runs at construction time on the roboRIO.
+    try {
+      java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+      m.put("INTAKING_FEEDER_VOLTAGE", SmartDashboard.getNumber("Intaking feeder roller value", INTAKING_FEEDER_VOLTAGE));
+      m.put("INTAKING_INTAKE_VOLTAGE", SmartDashboard.getNumber("Intaking intake roller value", INTAKING_INTAKE_VOLTAGE));
+      m.put("LAUNCHING_FEEDER_VOLTAGE", SmartDashboard.getNumber("Launching feeder roller value", LAUNCHING_FEEDER_VOLTAGE));
+      m.put("LAUNCHING_LAUNCHER_VOLTAGE", SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
+      m.put("SPIN_UP_FEEDER_VOLTAGE", SmartDashboard.getNumber("Spin-up feeder roller value", SPIN_UP_FEEDER_VOLTAGE));
+      m.put("SPIN_UP_SECONDS", SPIN_UP_SECONDS);
+      StringBuilder sb = new StringBuilder();
+      sb.append("{");
+      boolean first = true;
+      for (java.util.Map.Entry<String, Object> e : m.entrySet()) {
+        if (!first) sb.append(",\n");
+        first = false;
+        sb.append("  \"").append(e.getKey()).append("\": ");
+        Object v = e.getValue();
+        if (v instanceof Number) sb.append(v.toString()); else sb.append('"').append(v.toString()).append('"');
+      }
+      sb.append("}\n");
+      try {
+        java.nio.file.Files.write(java.nio.file.Paths.get("/home/lvuser/launcher_constants.json"), sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      } catch (Exception writeEx) {
+        // ignore write failures on desktop; it will succeed on roboRIO if writable
+      }
+    } catch (Throwable ignored) {
+    }
+
     // create the configuration for the feeder roller, set a current limit and apply
     // the config to the controller
     SparkMaxConfig feederConfig = new SparkMaxConfig();
@@ -53,24 +83,28 @@ public class CANFuelSubsystem extends SubsystemBase {
   // A method to set the rollers to values for intaking
   public void intake() {
     feederRoller.setVoltage(SmartDashboard.getNumber("Intaking feeder roller value", INTAKING_FEEDER_VOLTAGE));
-    intakeLauncherRoller
-        .setVoltage(SmartDashboard.getNumber("Intaking intake roller value", INTAKING_INTAKE_VOLTAGE));
+  // Invert the intake-launcher roller here so the intake direction matches
+  // the physical mechanism orientation (fixes cases where the roller spins
+  // the wrong way during intaking).
+  intakeLauncherRoller
+    .setVoltage(-SmartDashboard.getNumber("Intaking intake roller value", INTAKING_INTAKE_VOLTAGE));
   }
 
   // A method to set the rollers to values for ejecting fuel out the intake. Uses
   // the same values as intaking, but in the opposite direction.
   public void eject() {
-    feederRoller
-        .setVoltage(-1 * SmartDashboard.getNumber("Intaking feeder roller value", INTAKING_FEEDER_VOLTAGE));
-    intakeLauncherRoller
-        .setVoltage(-1 * SmartDashboard.getNumber("Intaking launcher roller value", INTAKING_INTAKE_VOLTAGE));
+  // Eject should run the rollers in the opposite direction to intake.
+  feederRoller
+    .setVoltage(-SmartDashboard.getNumber("Intaking feeder roller value", INTAKING_FEEDER_VOLTAGE));
+  intakeLauncherRoller
+    .setVoltage(SmartDashboard.getNumber("Intaking intake roller value", INTAKING_INTAKE_VOLTAGE));
   }
 
   // A method to set the rollers to values for launching.
   public void launch() {
     feederRoller.setVoltage(SmartDashboard.getNumber("Launching feeder roller value", LAUNCHING_FEEDER_VOLTAGE));
-    intakeLauncherRoller
-        .setVoltage(SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
+  intakeLauncherRoller
+    .setVoltage(SmartDashboard.getNumber("Launching launcher roller value", LAUNCHING_LAUNCHER_VOLTAGE));
   }
 
   // A method to stop the rollers
